@@ -857,19 +857,26 @@ static int job_stdout_job(job_handler_t* handler, u_long32 jid, job_summary_t *s
 #else
    print_job_id = summary->print_jobid;
 #endif
-   
+
    ctx->last_job_id = jid;
    if (summary->queue == NULL) {
       sge_dstring_clear(&(ctx->last_queue_name));
    } else {
       sge_dstring_copy_string(&(ctx->last_queue_name), summary->queue); 
    }
-   
+  
+   int job_name_length = 30;
+   int user_name_length = 16;
+   int queue_name_length = qstat_env->longest_queue_length+10;
+
    if (!ctx->job_header_printed) {
       int i;
-      int line_length = qstat_env->longest_queue_length-10+1;
+      // int line_length = qstat_env->longest_queue_length-10+1;
+      int line_length = job_name_length+user_name_length+queue_name_length-10-10-12+1;
       char * seperator = sge_malloc(line_length);
-      const char *part1 = "%s%-7.7s %s %s%s%s%s%s %-10.10s %-12.12s %s%-5.5s %s%s%s%s%s%s%s%s%s%-";
+      // const char *part1 = "%s%-7.7s %s %s%s%s%s%s %-10.10s %-12.12s %s%-5.5s %s%s%s%s%s%s%s%s%s%-";
+      // TODO make this dynamic
+      const char *part1 = "%s%-7.7s %s %s%s%s%s%s %-30.30s %-16.16s %s%-5.5s %s%s%s%s%s%s%s%s%s%-";
       const char *part3 = ".";
 	   const char *part5 = "s %s %s%s%s%s%s%s";
 		char *part6 = sge_malloc(strlen(part1) + strlen(part3) + strlen(part5) + 20);
@@ -880,7 +887,8 @@ static int job_stdout_job(job_handler_t* handler, u_long32 jid, job_summary_t *s
          seperator[i] = '-';
       }
       seperator[line_length-1] = '\0';
-      sprintf(part6, "%s%d%s%d%s", part1, qstat_env->longest_queue_length, part3, qstat_env->longest_queue_length, part5);
+      sprintf(part6, "%s%d%s%d%s", part1, queue_name_length, part3, queue_name_length, part5);
+      // sprintf(part6, "%s%d%s%d%s", part1, qstat_env->longest_queue_length, part3, qstat_env->longest_queue_length, part5);
    
       printf(part6,
                indent,
@@ -989,10 +997,13 @@ static int job_stdout_job(job_handler_t* handler, u_long32 jid, job_summary_t *s
 
    if (print_job_id) {
       /* job name */
-      printf("%-10.10s ", summary->name); 
+      // TODO make dynamic
+      printf("%-30.30s ", summary->name);
+      //printf("%-10.10s ", summary->name);
 
       /* job owner */
-      printf("%-12.12s ", summary->user); 
+      printf("%-16.16s ", summary->user);
+      //printf("%-12.12s ", summary->user);
    } else {
       printf("           "); 
       printf("             "); 
@@ -1105,7 +1116,8 @@ static int job_stdout_job(job_handler_t* handler, u_long32 jid, job_summary_t *s
    /* if not full listing we need the queue's name in each line */
    if (!(qstat_env->full_listing & QSTAT_DISPLAY_FULL)) {
       char temp[20];
-	   sprintf(temp,"%%-%d.%ds ", qstat_env->longest_queue_length, qstat_env->longest_queue_length);
+      sprintf(temp,"%%-%d.%ds ", queue_name_length, queue_name_length);
+      //sprintf(temp,"%%-%d.%ds ", qstat_env->longest_queue_length, qstat_env->longest_queue_length);
       printf(temp, summary->queue?summary->queue:"");
    }
    
